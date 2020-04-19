@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -13,11 +14,14 @@ namespace WC
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : System.Windows.Window
+    public partial class MainWindow : Window
     {
+        private readonly Application _application;
+
         public MainWindow()
         {
             InitializeComponent();
+            _application = new Application();
         }
 
         private async void Button_Click(object sender, RoutedEventArgs e)
@@ -34,8 +38,7 @@ namespace WC
 
             if (dialog.ShowDialog() ?? false)
             {
-                var app = new Application();
-                var doc = app.Documents.Open(dialog.FileName, null, true);
+                var doc = _application.Documents.Open(dialog.FileName, null, true);
 
                 var text = doc.Words.OfType<Range>()
                     .Select(x => x.Text?.ToLower().Trim())
@@ -46,10 +49,17 @@ namespace WC
                 await File.WriteAllTextAsync($"{dialog.FileName}.txt", string.Join(Environment.NewLine, text));
 
                 MessageBox.Show($"Уникальных слов: {text.Count}. Список слов сохранен: {dialog.FileName}.txt");
-
+                
+                doc.Close();
                 sender.Content = "Жми меня";
                 sender.IsEnabled = true;
             }
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            _application.Quit();
+            base.OnClosing(e);
         }
     }
 }
